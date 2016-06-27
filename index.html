@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js" charset="utf-8"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="gvplot.js" charset="utf-8"></script>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link href="gvplot.css" rel="stylesheet"/>
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <div class="page-header">
+        <h1>gvplot.js</h1>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div id="bar-plot">
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div id="scatter-plot">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    var barplot = GVPLOT.barplot()
+    .xLabel('Name')
+    .xValue(function(d) { return d.name; })
+    .yLabel('New Number')
+    .height(300);
+
+var barplotSelection =  d3.select('#bar-plot')
+    .datum([
+        {'name': 'some','y': 12},
+        {'name': 'arbitrary','y': 700},
+        {'name': 'set','y': 10},
+        {'name': 'of','y': 522},
+        {'name': 'data','y': 300},
+    ])
+    .call(barplot);
+
+var scatterplot = GVPLOT.scatterPlot()
+    .xLabel('Arbitrary Number X')
+    .yLabel('Arbitrary Number Y')
+    .height(400);
+
+var scatterdata = function () {
+    var data = [];
+    for (i=0;i<100;i++) {
+        data.push({'x': Math.random() * 500,'y': Math.random() * 500});
+    }
+    return data
+}
+var scatterSelection =  d3.select('#scatter-plot')
+    .datum(scatterdata)
+    .call(scatterplot);
+
+    </script>
+
+  </body>
+</html>

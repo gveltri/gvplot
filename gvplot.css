@@ -1,0 +1,41 @@
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+}
+
+.tick line {
+    opacity: 0.2;
+}
+
+.tooltip {
+    position: absolute;
+    pointer-events: none;
+    background-color: rgba(250,250,255, 0.8);
+    padding: 10px;
+    border: #eef 2px solid;
+}
+
+circle {
+    fill: steelblue;
+    stroke: none;
+}
+
+/* barplot styles */
+svg.gvplot-barplot {
+    font: 11px sans-serif;
+    color: #999;
+}
+
+svg.gvplot-barplot .bar {
+    fill: steelblue;
+}
+
+
