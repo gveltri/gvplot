@@ -23,11 +23,6 @@
     border: #eef 2px solid;
 }
 
-circle {
-    fill: steelblue;
-    stroke: none;
-}
-
 /* barplot styles */
 svg.gvplot-barplot {
     font: 11px sans-serif;

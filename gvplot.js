@@ -57,7 +57,7 @@ var GVPLOT = (function () {
 
             selection.each(function(data) {
 
-                width = $(this).width();
+                width = $(this).width() - margin.left - margin.right;
 
                 var xScale = d3.scale.ordinal().rangeRoundBands([0,width], .4),
                     xMap = function(d) { return xScale(xValue(d)); },
@@ -244,7 +244,7 @@ var GVPLOT = (function () {
             },
             xValue = function(d) { return d.x },
             yValue = function(d) { return d.y },
-            zValue = function(d) { return 4 },
+            zValue = function(d) { return d.z },
             plotPadding = 0,
             interactive = true,
             xLabel = 'x',
@@ -261,17 +261,33 @@ var GVPLOT = (function () {
                     .style("left", (d3.event.pageX + 5) + "px")
                     .style("top", (d3.event.pageY - 28) + "px");
 
-                d3.select(this).transition()
-                    .duration(50)
-                    .style("fill", "blue");
+                if (bubblePlot) {
+                    d3.select(this).transition()
+                        .duration(50)
+                        .style("opacity", 1);
+                }
+                else {
+                    d3.select(this).transition()
+                        .duration(50)
+                        .style("fill", "blue");
+                }
             },
             mouseOut = function(d) {
-                d3.select(this).transition()
-                    .duration(100)
-                    .style("fill", "steelblue");
                 tooltip.transition()
                     .duration(300)
                     .style("opacity", 0);
+
+                if (bubblePlot) {
+                    d3.select(this).transition()
+                        .duration(100)
+                        .style("fill", cMap)
+                        .style("opacity", 0.5);
+                }
+                else {
+                    d3.select(this).transition()
+                        .duration(100)
+                        .style("fill", "steelblue");
+                }
             },
             click = function(d) {
             },
@@ -286,29 +302,28 @@ var GVPLOT = (function () {
 
             selection.each(function(data) {
 
-                width = $(this).width();
+                width = $(this).width() - margin.left - margin.right;
 
                 var xScale = d3.scale.linear().range([0,width]),
                     xMap = function(d) { return xScale(xValue(d)); },
                     yScale = d3.scale.linear().range([height, 0]),
                     yMap = function(d) { return yScale(yValue(d)); },
-                    cValue = function(d) { return d.fields.category_1 + d.fields.category_2 + d.fields.category_3 },
+                    cValue = xValue,
 	                  cScale = d3.scale.category20(),
-                    cMap = function(d) { return sScale(cValue(d)); }
+                    cMap = function(d) { return cScale(cValue(d)); }
 
 
                 if (bubblePlot) {
                     // make these variables accessible in future releases
-                    var max_bubble_size = 100,
+                    var max_bubble_size = 50,
                         min_bubble_size = 20,
                         max_value_size = d3.max(data, zValue);
-                    var zScale = de.scale.linear().range([
-                        d3.scale.linear().range([
-                            min_bubble_size/max_value_size,
-	                          max_bubble_size/max_value_size
-                        ]),
-                        zMap = function(d) { return 5 + zScale(zValue(d)) }
-                    ])
+
+                    var zScale = d3.scale.linear().range([
+                        min_bubble_size/max_value_size,
+	                      max_bubble_size/max_value_size
+                    ]),
+                        zMap = function(d) { return 5 + zScale(zValue(d)) };
                 }
 
                 var xAxis = d3.svg.axis()
@@ -368,8 +383,9 @@ var GVPLOT = (function () {
 
                 if (bubblePlot) {
                     points
+                        .attr("class", "bubble-point")
                         .attr("stroke-width", 1)
-                        .attr("stroke-color", cMap)
+                        .attr("stroke", cMap)
                         .attr("fill", cMap)
                         .attr("opacity", 0.5);
 
@@ -379,6 +395,8 @@ var GVPLOT = (function () {
                         .attr("r", zMap);
                 }
                 else {
+                    points
+                        .attr("fill", "steelblue");
                     points
                         .transition()
                         .duration(1000)
@@ -489,7 +507,7 @@ var GVPLOT = (function () {
         };
 
         my.bubblePlot = function(value) {
-            if (!arguments.bubblePlot) return bubblePlot;
+            if (!arguments.length) return bubblePlot;
             bubblePlot = value;
             return my;
         };

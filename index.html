@@ -26,10 +26,16 @@
           <div id="scatter-plot">
           </div>
         </div>
+        <div class="col-md-12">
+          <div id="bubble-plot">
+          </div>
+        </div>
       </div>
     </div>
 
     <script>
+
+// columnar bar plot
     var barplot = GVPLOT.barplot()
     .xLabel('Name')
     .xValue(function(d) { return d.name; })
@@ -46,6 +52,8 @@ var barplotSelection =  d3.select('#bar-plot')
     ])
     .call(barplot);
 
+// scatter plot
+
 var scatterplot = GVPLOT.scatterPlot()
     .xLabel('Arbitrary Number X')
     .yLabel('Arbitrary Number Y')
@@ -61,6 +69,26 @@ var scatterdata = function () {
 var scatterSelection =  d3.select('#scatter-plot')
     .datum(scatterdata)
     .call(scatterplot);
+
+// bubble plot
+
+var bubbleplot = GVPLOT.scatterPlot()
+    .xLabel('Arbitrary Number X')
+    .yLabel('Arbitrary Number Y')
+    .height(400)
+    .bubblePlot(true);
+
+var bubbledata = function () {
+    var data = [];
+    for (i=0;i<50;i++) {
+        data.push({'x': Math.random() * 500,'y': Math.random() * 500, 'z': Math.random() * 500});
+    }
+    return data
+}
+
+var bubbleSelection = d3.select('#bubble-plot')
+    .datum(bubbledata)
+    .call(bubbleplot)
 
     </script>
 
