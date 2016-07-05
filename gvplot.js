@@ -75,50 +75,89 @@ var GVPLOT = (function () {
                     .innerTickSize(-width)
                     .outerTickSize(0);
 
-                selection.append("div")
-                    .classed("svg-container", true)
+                var svg = d3.select(this).selectAll("svg").data([data]);
+                svg.enter().append("svg")
 
-                var svg = selection.append("svg")
+                if (svg.selectAll('g')[0].length == 0) {
+                    var initialData = true;
+                }
+                else {
+                    var initialData = false;
+                }
+                var g = svg.selectAll("g").data([data]);
+
+                g.enter()
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.right + ")");
+
+                svg
                     .attr("class", "gvplot-barplot")
                     .attr("width", width + margin.left + margin.right)
                     .attr("height", height + margin.top + margin.bottom)
-                    .append("g")
-                    .attr("transform", "translate(" + margin.left + "," + margin.right + ")");
 
                 yScale.domain([0,d3.max(data, yValue) + plotPadding]);
                 xScale.domain(data.map(xValue));
 
-                svg.append("g")
-                    .attr("class", "x axis")
-                    .attr("transform", "translate(" + 0 + "," + height + ")")
-                    .call(xAxis)
-                    .append("text")
-                    .attr("class", "label")
-                    .attr("x", width)
-                    .attr("y", -6)
-                    .style("text-anchor", "end")
-                    .text(xLabel);
+                if (initialData) {
+                    g.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(" + 0 + "," + height + ")")
+                        .call(xAxis)
+                        .append("text")
+                        .attr("class", "label")
+                        .attr("x", width)
+                        .attr("y", -6)
+                        .style("text-anchor", "end")
+                        .text(xLabel);
 
-                svg.append("g")
-                    .attr("class", "y axis")
-                    .call(yAxis)
-                    .append("text")
-                    .attr("class", "label")
-                    .attr("transform", "rotate(-90)")
-                    .attr("y", 6)
-                    .attr("dy", ".71em")
-                    .style("text-anchor", "end")
-                    .text(yLabel);
+                    g.append("g")
+                        .attr("class", "y axis")
+                        .call(yAxis)
+                        .append("text")
+                        .attr("class", "label")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 6)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text(yLabel);
+                }
+                else {
+                    g.select('g.x.axis')
+                        .transition()
+                        .duration(1000)
+                        .call(xAxis);
+                    g.select('g.y.axis')
+                        .transition()
+                        .duration(1000)
+                        .call(yAxis);
+                }
 
-                var bars = svg.selectAll(".bar")
-                    .data(data)
-                    .enter()
+                var bars = g.selectAll(".bar")
+                    .data(data);
+
+                bars.transition()
+                    .duration(1000)
+                    .attr("x", xMap)
+                    .attr("y", yMap)
+                    .attr("height", function(d) { return height - yMap(d); } );
+
+                bars.enter()
                     .append("rect")
                     .attr("class", "bar")
                     .attr("x", xMap)
                     .attr("y", height)
                     .attr("height", 0)
                     .attr("width", xScale.rangeBand());
+                bars.transition()
+                    .duration(1000)
+                    .attr("x", xMap)
+                    .attr("y", yMap)
+                    .attr("height", function(d) { return height - yMap(d); } );
+                bars.exit()
+                    .transition(200)
+                    .attr("height", 0)
+                    .attr("y", height)
+                    .each("end", function(d) { this.remove() });
 
                 if (interactive) {
                     bars
@@ -127,11 +166,6 @@ var GVPLOT = (function () {
                         .on("click", click);
                 }
 
-                bars
-                    .transition()
-                    .duration(1000)
-                    .attr("y", yMap)
-                    .attr("height", function(d) { return height - yMap(d); } );
 
             }
 
@@ -264,12 +298,12 @@ var GVPLOT = (function () {
                 if (bubblePlot) {
                     d3.select(this).transition()
                         .duration(50)
-                        .style("opacity", 1);
+                        .style("stroke-width", 10);
                 }
                 else {
                     d3.select(this).transition()
                         .duration(50)
-                        .style("fill", "blue");
+                        .style("stroke-width", 10);
                 }
             },
             mouseOut = function(d) {
@@ -280,13 +314,12 @@ var GVPLOT = (function () {
                 if (bubblePlot) {
                     d3.select(this).transition()
                         .duration(100)
-                        .style("fill", cMap)
-                        .style("opacity", 0.5);
+                        .style("stroke-width", 1);
                 }
                 else {
                     d3.select(this).transition()
                         .duration(100)
-                        .style("fill", "steelblue");
+                        .style("stroke-width", 1);
                 }
             },
             click = function(d) {
@@ -302,6 +335,10 @@ var GVPLOT = (function () {
 
             selection.each(function(data) {
 
+                if (bubblePlot) {
+
+                }
+
                 width = $(this).width() - margin.left - margin.right;
 
                 var xScale = d3.scale.linear().range([0,width]),
@@ -314,6 +351,11 @@ var GVPLOT = (function () {
 
 
                 if (bubblePlot) {
+                    // sort bubbles so that smallest are drawn last
+                    data.sort(function(x1, x2) {
+                        return d3.descending(zValue(x1), zValue(x2))
+                    });
+
                     // make these variables accessible in future releases
                     var max_bubble_size = 50,
                         min_bubble_size = 20,
@@ -329,6 +371,7 @@ var GVPLOT = (function () {
                 var xAxis = d3.svg.axis()
                     .scale(xScale)
                     .orient("bottom")
+                    .innerTickSize(-height)
                     .outerTickSize(0);
 
                 var yAxis = d3.svg.axis()
@@ -396,7 +439,8 @@ var GVPLOT = (function () {
                 }
                 else {
                     points
-                        .attr("fill", "steelblue");
+                        .attr("fill", "steelblue")
+                        .attr("stroke", "steelblue");
                     points
                         .transition()
                         .duration(1000)

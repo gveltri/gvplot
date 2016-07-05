@@ -42,15 +42,32 @@
     .yLabel('New Number')
     .height(300);
 
+var barplotData = function() {
+    var output = [
+        {'name': 'some','y': Math.random() * 500},
+        {'name': 'arbitrary','y': Math.random() * 500},
+        {'name': 'set','y': Math.random() * 500},
+        {'name': 'of','y': Math.random() * 500},
+        {'name': 'data','y': Math.random() * 500},
+    ]
+    if (Math.random() > 0.5) {
+        output.push({'name': 'random_x','y': Math.random() * 500})
+    }
+    return output
+}
+
 var barplotSelection =  d3.select('#bar-plot')
-    .datum([
-        {'name': 'some','y': 12},
-        {'name': 'arbitrary','y': 700},
-        {'name': 'set','y': 10},
-        {'name': 'of','y': 522},
-        {'name': 'data','y': 300},
-    ])
+    .datum(barplotData())
     .call(barplot);
+
+window.setInterval(function() {
+
+    barplotSelection
+        .datum(barplotData())
+        .call(barplot);
+
+}, 2000);
+
 
 // scatter plot
 
