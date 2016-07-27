@@ -76,7 +76,7 @@ var GVPLOT = (function () {
                     .outerTickSize(0);
 
                 var svg = d3.select(this).selectAll("svg").data([data]);
-                svg.enter().append("svg")
+                svg.enter().append("svg");
 
                 if (svg.selectAll('g')[0].length == 0) {
                     var initialData = true;
@@ -133,9 +133,9 @@ var GVPLOT = (function () {
                 }
 
                 var bars = g.selectAll(".bar")
-                    .data(data);
+                    .data(data, xValue); // join on x-value, change in future to allow more interesting joins
 
-                bars.transition()
+                bars.transition("transition-position")
                     .duration(1000)
                     .attr("x", xMap)
                     .attr("y", yMap)
@@ -148,7 +148,7 @@ var GVPLOT = (function () {
                     .attr("y", height)
                     .attr("height", 0)
                     .attr("width", xScale.rangeBand());
-                bars.transition()
+                bars.transition("transition-position")
                     .duration(1000)
                     .attr("x", xMap)
                     .attr("y", yMap)
@@ -335,10 +335,6 @@ var GVPLOT = (function () {
 
             selection.each(function(data) {
 
-                if (bubblePlot) {
-
-                }
-
                 width = $(this).width() - margin.left - margin.right;
 
                 var xScale = d3.scale.linear().range([0,width]),
@@ -380,46 +376,81 @@ var GVPLOT = (function () {
                     .innerTickSize(-width)
                     .outerTickSize(0);
 
-                selection.append("div")
-                    .classed("svg-container", true)
+                var svg = d3.select(this).selectAll("svg").data([data]);
+                svg.enter().append("svg");
 
-                var svg = selection.append("svg")
-                    .attr("class", "gvplot-barplot")
-                    .attr("width", width + margin.left + margin.right)
-                    .attr("height", height + margin.top + margin.bottom)
+                if (svg.selectAll('g')[0].length == 0) {
+                    var initialData = true;
+                }
+                else {
+                    var initialData = false;
+                }
+                var g = svg.selectAll("g").data([data]);
+
+                g.enter()
                     .append("g")
                     .attr("transform", "translate(" + margin.left + "," + margin.right + ")");
+
+                svg
+                    .attr("class", "gvplot-scatterplot")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
 
                 yScale.domain([0,d3.max(data, yValue) + plotPadding]);
                 xScale.domain([0,d3.max(data, xValue) + plotPadding]);
 
-                svg.append("g")
-                    .attr("class", "x axis")
-                    .attr("transform", "translate(" + 0 + "," + height + ")")
-                    .call(xAxis)
-                    .append("text")
-                    .attr("class", "label")
-                    .attr("x", width)
-                    .attr("y", -6)
-                    .style("text-anchor", "end")
-                    .text(xLabel);
+                if (initialData) {
+                    g.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(" + 0 + "," + height + ")")
+                        .call(xAxis)
+                        .append("text")
+                        .attr("class", "label")
+                        .attr("x", width)
+                        .attr("y", -6)
+                        .style("text-anchor", "end")
+                        .text(xLabel);
 
-                svg.append("g")
-                    .attr("class", "y axis")
-                    .call(yAxis)
-                    .append("text")
-                    .attr("class", "label")
-                    .attr("transform", "rotate(-90)")
-                    .attr("y", 6)
-                    .attr("dy", ".71em")
-                    .style("text-anchor", "end")
-                    .text(yLabel);
+                    g.append("g")
+                        .attr("class", "y axis")
+                        .call(yAxis)
+                        .append("text")
+                        .attr("class", "label")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 6)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text(yLabel);
+                }
+                else {
+                    g.select('g.x.axis')
+                        .transition()
+                        .duration(1000)
+                        .call(xAxis);
+                    g.select('g.y.axis')
+                        .transition()
+                        .duration(1000)
+                        .call(yAxis);
+                }
 
-                var points = svg.selectAll(".point")
-                    .data(data)
-                    .enter()
+                if (bubblePlot) {
+                    var points = g.selectAll(".bubble-point")
+                        .data(data, xValue);
+                }
+                else {
+                    var points = g.selectAll(".point")
+                        .data(data, xValue);
+                }
+
+                points.enter()
                     .append("circle")
                     .attr("class", "point")
+                    .attr("cx", xMap)
+                    .attr("cy", yMap)
+                    .attr("r", 0);
+
+                points.transition("transition-position")
+                    .duration(1000)
                     .attr("cx", xMap)
                     .attr("cy", yMap)
                     .attr("r", 0);
@@ -431,7 +462,6 @@ var GVPLOT = (function () {
                         .attr("stroke", cMap)
                         .attr("fill", cMap)
                         .attr("opacity", 0.5);
-
                     points
                         .transition()
                         .duration(1000)
@@ -446,6 +476,11 @@ var GVPLOT = (function () {
                         .duration(1000)
                         .attr("r", 4);
                 }
+
+                points.exit()
+                    .transition(200)
+                    .attr("r", 0)
+                    .each("end", function(d) { this.remove() });
 
                 if (interactive) {
                     points
