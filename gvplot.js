@@ -271,7 +271,7 @@ var GVPLOT = (function () {
         var height = 300,
             width = 700,
             margin = {
-                top: 20,
+                top: 30,
                 right: 20,
                 bottom: 30,
                 left: 40
@@ -279,32 +279,48 @@ var GVPLOT = (function () {
             xValue = function(d) { return d.x },
             yValue = function(d) { return d.y },
             zValue = function(d) { return d.z },
+	    wValue = null,
+	    jValue = xValue,
+	    coloration = ['red', 'white', 'green'],
             plotPadding = 0,
             interactive = true,
             xLabel = 'x',
             yLabel = 'y',
+	    zLabel = 'z',
+            wLabel = 'w',
+	    tooltipTitle = null,
             tooltip = d3.select("body").append("div")
-            .attr("class", "tooltip tooltip-scatterPlot")
+            .attr("class", "tooltip tooltip-scatterplot")
             .style("opacity", 0),
             mouseOver = function(d) {
-                tooltip.transition()
-                    .duration(100)
-                    .style("opacity", 1);
-                tooltip.html( xLabel + ": " + xValue(d) +
-                              "<br>" + yLabel + ": " + yValue(d))
-                    .style("left", (d3.event.pageX + 5) + "px")
-                    .style("top", (d3.event.pageY - 28) + "px");
+		var tooltip_text = xLabel + ": " + xValue(d).toFixed(2) + "<br>" + yLabel + ": " + yValue(d).toFixed(2);
 
                 if (bubblePlot) {
                     d3.select(this).transition()
                         .duration(50)
-                        .style("stroke-width", 10);
+                        .style("stroke-width", 3);
+		    
+		    tooltip_text = tooltip_text + "<br>" + zLabel + ": " + zValue(d).toFixed(2);
+		    if (wValue != null) {
+			tooltip_text = tooltip_text + "<br>" + wLabel + ": " + wValue(d).toFixed(2);
+		    }
                 }
                 else {
                     d3.select(this).transition()
                         .duration(50)
-                        .style("stroke-width", 10);
+			.style("stroke-width", 3);
                 }
+
+		if (tooltipTitle != null) {
+		    tooltip_text = "<b>" + tooltipTitle(d) + "</b><br>" + tooltip_text;
+		}
+		
+		tooltip.transition()
+                    .duration(100)
+                    .style("opacity", 1);
+		tooltip.html(tooltip_text)
+                    .style("left", (d3.event.pageX + 5) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
             },
             mouseOut = function(d) {
                 tooltip.transition()
@@ -340,10 +356,22 @@ var GVPLOT = (function () {
                 var xScale = d3.scale.linear().range([0,width]),
                     xMap = function(d) { return xScale(xValue(d)); },
                     yScale = d3.scale.linear().range([height, 0]),
-                    yMap = function(d) { return yScale(yValue(d)); },
-                    cValue = xValue,
-	                  cScale = d3.scale.category20(),
-                    cMap = function(d) { return cScale(cValue(d)); }
+                    yMap = function(d) { return yScale(yValue(d)); };
+
+		if (wValue != null) {
+		    var pivot_w = d3.median(data, wValue),
+			max_w = d3.max(data, wValue),
+			min_w = d3.min(data, wValue);
+		    
+		    var cValue = wValue,
+			cScale = d3.scale.linear().domain([min_w,pivot_w,max_w]).range(coloration),
+			cMap = function(d) { return cScale(cValue(d)); }
+		}
+                else {
+		    var cValue = zValue,
+			cScale = d3.scale.category20(),
+			cMap = function(d) { return cScale(cValue(d)); }
+		}
 
 
                 if (bubblePlot) {
@@ -384,6 +412,10 @@ var GVPLOT = (function () {
                 }
                 else {
                     var initialData = false;
+		    if (interactive) {
+			d3.select("body").selectAll('.tooltip.tooltip-scatterplot')
+			    .style('opacity', 0);
+		    }
                 }
                 var g = svg.selectAll("g").data([data]);
 
@@ -394,7 +426,7 @@ var GVPLOT = (function () {
                 svg
                     .attr("class", "gvplot-scatterplot")
                     .attr("width", width + margin.left + margin.right)
-                    .attr("height", height + margin.top + margin.bottom)
+                    .attr("height", height + margin.top + margin.bottom);
 
                 yScale.domain([0,d3.max(data, yValue) + plotPadding]);
                 xScale.domain([0,d3.max(data, xValue) + plotPadding]);
@@ -421,6 +453,12 @@ var GVPLOT = (function () {
                         .attr("dy", ".71em")
                         .style("text-anchor", "end")
                         .text(yLabel);
+
+		    g.append("clipPath")
+			.attr("id", "bubble-plot-clip")
+			.append("rect")
+			.attr("width", width)
+			.attr("height", height);
                 }
                 else {
                     g.select('g.x.axis')
@@ -432,10 +470,10 @@ var GVPLOT = (function () {
                         .duration(1000)
                         .call(yAxis);
                 }
-
+		
                 if (bubblePlot) {
                     var points = g.selectAll(".bubble-point")
-                        .data(data, xValue);
+                        .data(data, jValue);
                 }
                 else {
                     var points = g.selectAll(".point")
@@ -447,7 +485,8 @@ var GVPLOT = (function () {
                     .attr("class", "point")
                     .attr("cx", xMap)
                     .attr("cy", yMap)
-                    .attr("r", 0);
+                    .attr("r", 0)
+		    .attr("clip-path", "url(#bubble-plot-clip)");
 
                 points.transition("transition-position")
                     .duration(1000)
@@ -459,7 +498,7 @@ var GVPLOT = (function () {
                     points
                         .attr("class", "bubble-point")
                         .attr("stroke-width", 1)
-                        .attr("stroke", cMap)
+                        .attr("stroke", '#333')
                         .attr("fill", cMap)
                         .attr("opacity", 0.5);
                     points
@@ -489,16 +528,50 @@ var GVPLOT = (function () {
                         .on("click", click);
                 }
 
+		if (initialData) {
+		    var container = d3.select(this)[0];
+		    window.addEventListener('resize', function() {
+			width = $(container).width() - margin.left - margin.right,
+			xScale = d3.scale.linear().range([0,width]),
+			yScale = d3.scale.linear().range([height, 0]),
+			xScale.domain([0,d3.max(data, xValue) + plotPadding]),
+			yScale.domain([0,d3.max(data, yValue) + plotPadding]);
+			svg
+			    .transition()
+			    .attr("width", width + margin.left + margin.right)
+			    .attr("height", height + margin.top + margin.bottom);
+			g.select('g.y.axis')
+			    .transition()
+			    .call(yAxis.scale(yScale).innerTickSize(-width));
+			g.select('g.x.axis')
+			    .transition()
+			    .call(xAxis.scale(xScale));
+			g.select('g.x.axis').select('text.label')
+			    .transition()
+			    .attr("x", width);
+			g.selectAll('.point')
+			    .transition()
+			    .attr("cx", xMap)
+			    .attr("cy", yMap);
+			g.selectAll('.bubble-point')
+			    .transition()
+			    .attr("cx", xMap)
+			    .attr("cy", yMap);
+			g.select('clipPath').select('rect')
+			    .transition()
+			    .attr("width", width);
+		    });
+		}
             }
+			   
 
                           );
+	    
 
             afterCreation();
 
+	    
         }
-
-        my.resize = function() {
-        };
 
         // accessors
         my.height = function(value) {
@@ -555,6 +628,18 @@ var GVPLOT = (function () {
             return my;
         };
 
+	my.zLabel = function(value) {
+            if (!arguments.length) return zLabel;
+            zLabel = value;
+            return my;
+        };
+
+	my.wLabel = function(value) {
+            if (!arguments.length) return wLabel;
+            wLabel = value;
+            return my;
+        };
+
         my.mouseOver = function(value) {
             if (!arguments.length) return mouseOver;
             mouseOver = value;
@@ -592,8 +677,32 @@ var GVPLOT = (function () {
         };
 
         my.zValue = function(value) {
-            if (!arguments.zValue) return zValue;
+            if (!arguments.length) return zValue;
             zValue = value;
+            return my;
+        };
+
+	my.wValue = function(value) {
+            if (!arguments.length) return wValue;
+            wValue = value;
+            return my;
+        };
+
+	my.coloration = function(value) {
+            if (!arguments.length) return coloration;
+            coloration = value;
+            return my;
+        };
+
+	my.jValue = function(value) {
+            if (!arguments.length) return jValue;
+            jValue = value;
+            return my;
+        };
+
+	my.tooltipTitle = function(value) {
+            if (!arguments.length) return tooltipTitle;
+            tooltipTitle = value;
             return my;
         };
 

@@ -101,12 +101,15 @@ var bubbleplot = GVPLOT.scatterPlot()
     .xLabel('Arbitrary Number X')
     .yLabel('Arbitrary Number Y')
     .height(400)
-    .bubblePlot(true);
+    .bubblePlot(true)
+    .wValue(function(d) { return d.w; })
+    .jValue(function(d) { return d.w; })
+    .tooltipTitle(function(d) { return d.name });
 
 var bubbledata = function () {
     var data = [];
     for (i=0;i<50;i++) {
-        data.push({'x': Math.floor(Math.random() * 500),'y': Math.random() * 500, 'z': Math.random() * 500});
+        data.push({'name': 'arbitrary name','x': Math.floor(Math.random() * 500),'y': Math.random() * 500, 'z': Math.random() * 500, 'w': Math.floor(Math.random() * 200)});
     }
     return data
 }
@@ -121,7 +124,7 @@ window.setInterval(function() {
         .datum(bubbledata())
         .call(bubbleplot);
 
-}, 2000);
+}, 10000);
 
 
     </script>
