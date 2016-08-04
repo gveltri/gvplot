@@ -282,7 +282,7 @@ var GVPLOT = (function () {
 	    wValue = null,
 	    jValue = xValue,
 	    coloration = ['red', 'white', 'green'],
-            plotPadding = 0,
+            plotPadding = 'auto',
             interactive = true,
             xLabel = 'x',
             yLabel = 'y',
@@ -342,7 +342,9 @@ var GVPLOT = (function () {
             },
             beforeCreation = function() {},
             afterCreation = function() {},
-            bubblePlot = false;
+            bubblePlot = false,
+	    zoomable = false,
+	    plotTitle = null;
 
         // main function
         function my(selection) {
@@ -404,6 +406,7 @@ var GVPLOT = (function () {
                     .innerTickSize(-width)
                     .outerTickSize(0);
 
+		
                 var svg = d3.select(this).selectAll("svg").data([data]);
                 svg.enter().append("svg");
 
@@ -428,10 +431,56 @@ var GVPLOT = (function () {
                     .attr("width", width + margin.left + margin.right)
                     .attr("height", height + margin.top + margin.bottom);
 
-                yScale.domain([0,d3.max(data, yValue) + plotPadding]);
-                xScale.domain([0,d3.max(data, xValue) + plotPadding]);
+		var yMax = d3.max(data, yValue),
+		    xMax = d3.max(data, xValue);
+
+		if (plotPadding=='auto') {
+		    var xplotPadding = xMax / 10,
+			yplotPadding = yMax / 9;
+		}
+		else {
+		    var xplotPadding = plotPadding,
+			yplotPadding = plotPadding;
+		}
+
+                yScale.domain([0, yMax + yplotPadding]);
+                xScale.domain([0, xMax + xplotPadding]);
+
+		var zoom = d3.behavior.zoom()
+		    .x(xScale)
+		    .y(yScale)
+		    .scaleExtent([0, 500])
+		    .on("zoom", zoom);
+		g.call(zoom);
+
+		function zoom() {
+		    svg.select(".x.axis").call(xAxis);
+		    svg.select(".y.axis").call(yAxis);
+
+		    svg.selectAll(".point")
+			.attr("cx", xMap)
+			.attr("cy", yMap);
+
+		    svg.selectAll(".bubble-point")
+			.attr("cx", xMap)
+			.attr("cy", yMap);
+		}
 
                 if (initialData) {
+		    if (plotTitle != null) {
+			plot_title = g.append("text")
+		            .attr("x", (width / 2))
+		            .attr("y", -5)
+		            .attr("text-anchor", "middle")
+		            .style("font-size", "16px")
+		            .text(plotTitle);
+		    }
+		    
+		    g.append("rect")
+			.attr("width", width)
+			.attr("height", height)
+			.attr("class", "space-selector");
+		    
                     g.append("g")
                         .attr("class", "x axis")
                         .attr("transform", "translate(" + 0 + "," + height + ")")
@@ -534,12 +583,15 @@ var GVPLOT = (function () {
 			width = $(container).width() - margin.left - margin.right,
 			xScale = d3.scale.linear().range([0,width]),
 			yScale = d3.scale.linear().range([height, 0]),
-			xScale.domain([0,d3.max(data, xValue) + plotPadding]),
-			yScale.domain([0,d3.max(data, yValue) + plotPadding]);
+			xScale.domain([0,d3.max(data, xValue) + xplotPadding]),
+			yScale.domain([0,d3.max(data, yValue) + yplotPadding]);
 			svg
 			    .transition()
 			    .attr("width", width + margin.left + margin.right)
 			    .attr("height", height + margin.top + margin.bottom);
+			plot_title.transition()
+			    .attr("x", (width / 2))
+		            .attr("y", -5)
 			g.select('g.y.axis')
 			    .transition()
 			    .call(yAxis.scale(yScale).innerTickSize(-width));
@@ -564,7 +616,7 @@ var GVPLOT = (function () {
 		}
             }
 			   
-
+			   
                           );
 	    
 
@@ -706,10 +758,22 @@ var GVPLOT = (function () {
             return my;
         };
 
+	my.zoomable = function(value) {
+            if (!arguments.length) return zoomable;
+            zoomable = value;
+            return my;
+        };
+
+	my.plotTitle = function(value) {
+            if (!arguments.length) return plotTitle;
+            plotTitle = value;
+            return my;
+        };
+
         return my;
 
     };
 
     return gvplot;
-
+    
 }());

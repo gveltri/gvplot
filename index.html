@@ -104,7 +104,8 @@ var bubbleplot = GVPLOT.scatterPlot()
     .bubblePlot(true)
     .wValue(function(d) { return d.w; })
     .jValue(function(d) { return d.w; })
-    .tooltipTitle(function(d) { return d.name });
+    .tooltipTitle(function(d) { return d.name; })
+    .plotTitle('Generic Bubble Plot');
 
 var bubbledata = function () {
     var data = [];

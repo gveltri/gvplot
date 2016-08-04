@@ -48,3 +48,8 @@ svg.gvplot-barplot .bar {
     top: 10px;
     left: 0;
 }
+
+rect.space-selector {
+    fill: transparent;
+    shape-rendering: crispEdges;
+}
