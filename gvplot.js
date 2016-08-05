@@ -292,52 +292,7 @@ var GVPLOT = (function () {
             tooltip = d3.select("body").append("div")
             .attr("class", "tooltip tooltip-scatterplot")
             .style("opacity", 0),
-            mouseOver = function(d) {
-		var tooltip_text = xLabel + ": " + xValue(d).toFixed(2) + "<br>" + yLabel + ": " + yValue(d).toFixed(2);
-
-                if (bubblePlot) {
-                    d3.select(this).transition()
-                        .duration(50)
-                        .style("stroke-width", 3);
-		    
-		    tooltip_text = tooltip_text + "<br>" + zLabel + ": " + zValue(d).toFixed(2);
-		    if (wValue != null) {
-			tooltip_text = tooltip_text + "<br>" + wLabel + ": " + wValue(d).toFixed(2);
-		    }
-                }
-                else {
-                    d3.select(this).transition()
-                        .duration(50)
-			.style("stroke-width", 3);
-                }
-
-		if (tooltipTitle != null) {
-		    tooltip_text = "<b>" + tooltipTitle(d) + "</b><br>" + tooltip_text;
-		}
-		
-		tooltip.transition()
-                    .duration(100)
-                    .style("opacity", 1);
-		tooltip.html(tooltip_text)
-                    .style("left", (d3.event.pageX + 5) + "px")
-                    .style("top", (d3.event.pageY - 28) + "px");
-            },
-            mouseOut = function(d) {
-                tooltip.transition()
-                    .duration(300)
-                    .style("opacity", 0);
-
-                if (bubblePlot) {
-                    d3.select(this).transition()
-                        .duration(100)
-                        .style("stroke-width", 1);
-                }
-                else {
-                    d3.select(this).transition()
-                        .duration(100)
-                        .style("stroke-width", 1);
-                }
-            },
+	    customTooltip = null,
             click = function(d) {
             },
             beforeCreation = function() {},
@@ -449,11 +404,20 @@ var GVPLOT = (function () {
 		var zoom = d3.behavior.zoom()
 		    .x(xScale)
 		    .y(yScale)
-		    .scaleExtent([0, 500])
+		    .scaleExtent([1, 10])
 		    .on("zoom", zoom);
 		g.call(zoom);
 
 		function zoom() {
+		    zoom.translate(panLimit(
+			zoom,
+			{x: [-xplotPadding,xMax], y: [-yplotPadding,yMax]},
+			xScale,
+			yScale,
+			height,
+			width
+		    ));
+		    
 		    svg.select(".x.axis").call(xAxis);
 		    svg.select(".y.axis").call(yAxis);
 
@@ -572,9 +536,42 @@ var GVPLOT = (function () {
 
                 if (interactive) {
                     points
-                        .on("mouseover", mouseOver)
-                        .on("mouseout", mouseOut)
+                        .on("mouseover", function(d) {
+			    var tooltip_text = customTooltip == null ? tooltipConstructor(d) : customTooltip(d);
+			    d3.select(this).transition()
+				.duration(50)
+				.style("stroke-width", 3);			    
+			    tooltip.transition()
+				.duration(100)
+				.style("opacity", 1);
+			    tooltip.html(tooltip_text)
+				.style("left", (d3.event.pageX + 5) + "px")
+				.style("top", (d3.event.pageY - 28) + "px");
+			})
+                        .on("mouseout", function(d) {
+			    tooltip.transition()
+				.duration(300)
+				.style("opacity", 0);
+
+			    d3.select(this).transition()
+				.duration(100)
+				.style("stroke-width", 1);
+			})
                         .on("click", click);
+
+		    function tooltipConstructor(d) {
+			var tooltip_text = xLabel + ": " + xValue(d).toFixed(2) + "<br>" + yLabel + ": " + yValue(d).toFixed(2);
+			if (bubblePlot) {
+			    tooltip_text = tooltip_text + "<br>" + zLabel + ": " + zValue(d).toFixed(2);
+			}
+			if (wValue != null) {
+			    tooltip_text = tooltip_text + "<br>" + wLabel + ": " + wValue(d).toFixed(2);
+			}
+			if (tooltipTitle != null) {
+			    tooltip_text = "<b>" + tooltipTitle(d) + "</b><br>" + tooltip_text;
+			}
+			return tooltip_text
+		    }
                 }
 
 		if (initialData) {
@@ -614,6 +611,7 @@ var GVPLOT = (function () {
 			    .attr("width", width);
 		    });
 		}
+		
             }
 			   
 			   
@@ -692,21 +690,15 @@ var GVPLOT = (function () {
             return my;
         };
 
-        my.mouseOver = function(value) {
-            if (!arguments.length) return mouseOver;
-            mouseOver = value;
-            return my;
-        };
-
-        my.mouseOut = function(value) {
-            if (!arguments.length) return mouseOut;
-            mouseOut = value;
-            return my;
-        };
-
         my.click = function(value) {
             if (!arguments.length) return click;
             click = value;
+            return my;
+        };
+
+	my.customTooltip = function(value) {
+            if (!arguments.length) return customTooltip;
+            customTooltip = value;
             return my;
         };
 
@@ -775,5 +767,28 @@ var GVPLOT = (function () {
     };
 
     return gvplot;
+
+    function panLimit(zoom, panExtent, x, y, height, width) {
+	var divisor = {h: height / ((y.domain()[1]-y.domain()[0])*zoom.scale()), w: width / ((x.domain()[1]-x.domain()[0])*zoom.scale())},
+	    minX = -(((x.domain()[0]-x.domain()[1])*zoom.scale())+(panExtent.x[1]-(panExtent.x[1]-(width/divisor.w)))),
+	    minY = -(((y.domain()[0]-y.domain()[1])*zoom.scale())+(panExtent.y[1]-(panExtent.y[1]-(height*(zoom.scale())/divisor.h))))*divisor.h,
+	    maxX = -(((x.domain()[0]-x.domain()[1]))+(panExtent.x[1]-panExtent.x[0]))*divisor.w*zoom.scale(),
+	    maxY = (((y.domain()[0]-y.domain()[1])*zoom.scale())+(panExtent.y[1]-panExtent.y[0]))*divisor.h*zoom.scale(),
+
+	    tx = x.domain()[0] < panExtent.x[0] ?
+	    minX :
+	    x.domain()[1] > panExtent.x[1] ?
+	    maxX :
+	    zoom.translate()[0],
+	    ty = y.domain()[0]  < panExtent.y[0]?
+	    minY :
+	    y.domain()[1] > panExtent.y[1] ?
+	    maxY :
+	    zoom.translate()[1];
+
+	return [tx,ty];
+
+    }
     
 }());
+
