@@ -299,7 +299,8 @@ var GVPLOT = (function () {
             afterCreation = function() {},
             bubblePlot = false,
 	    zoomable = false,
-	    plotTitle = null;
+	    plotTitle = null,
+	    trendLine = false;
 
         // main function
         function my(selection) {
@@ -332,7 +333,6 @@ var GVPLOT = (function () {
 
 
                 if (bubblePlot) {
-                    // sort bubbles so that smallest are drawn last
                     data.sort(function(x1, x2) {
                         return d3.descending(zValue(x1), zValue(x2))
                     });
@@ -418,16 +418,27 @@ var GVPLOT = (function () {
 			width
 		    ));
 		    
-		    svg.select(".x.axis").call(xAxis);
-		    svg.select(".y.axis").call(yAxis);
+		    g.select(".x.axis").call(xAxis);
+		    g.select(".y.axis").call(yAxis);
 
-		    svg.selectAll(".point")
+		    g.selectAll(".point")
 			.attr("cx", xMap)
 			.attr("cy", yMap);
 
-		    svg.selectAll(".bubble-point")
+		    g.selectAll(".bubble-point")
 			.attr("cx", xMap)
 			.attr("cy", yMap);
+
+		    g.selectAll('.trendline')
+			.attr("x1", function(d) { return xScale(d[0]); })
+			.attr("y1", function(d) { return yScale(d[1]); })
+			.attr("x2", function(d) { return xScale(d[2]); })
+			.attr("y2", function(d) { return yScale(d[3]); });
+		}
+
+		if (trendLine) {
+		    var trendline = g.selectAll(".trendline")
+			.data(trendLineFromData(data, xValue, yValue));
 		}
 
                 if (initialData) {
@@ -438,6 +449,20 @@ var GVPLOT = (function () {
 		            .attr("text-anchor", "middle")
 		            .style("font-size", "16px")
 		            .text(plotTitle);
+		    }
+
+		    if (trendLine) {
+			trendline.enter()
+			    .append("line")
+			    .attr("class", "trendline")
+			    .attr("x1", function(d) { return xScale(d[0]); })
+			    .attr("y1", function(d) { return yScale(d[1]); })
+			    .attr("x2", function(d) { return xScale(d[2]); })
+			    .attr("y2", function(d) { return yScale(d[3]); })
+			    .attr("stroke", "steelblue")
+			    .attr("stroke-dasharray", ("3","5"))
+			    .attr("stroke-width", 2)
+			    .attr("clip-path", "url(#bubble-plot-clip)");
 		    }
 		    
 		    g.append("rect")
@@ -493,6 +518,16 @@ var GVPLOT = (function () {
                         .data(data, xValue);
                 }
 
+		if (trendLine) {
+		    trendline
+			.transition()
+			.duration(500)
+			.attr("x1", function(d) { return xScale(d[0]); })
+			.attr("y1", function(d) { return yScale(d[1]); })
+			.attr("x2", function(d) { return xScale(d[2]); })
+			.attr("y2", function(d) { return yScale(d[3]); });
+		}
+
                 points.enter()
                     .append("circle")
                     .attr("class", "point")
@@ -500,7 +535,7 @@ var GVPLOT = (function () {
                     .attr("cy", yMap)
                     .attr("r", 0)
 		    .attr("clip-path", "url(#bubble-plot-clip)");
-
+		
                 points.transition("transition-position")
                     .duration(1000)
                     .attr("cx", xMap)
@@ -606,6 +641,12 @@ var GVPLOT = (function () {
 			    .transition()
 			    .attr("cx", xMap)
 			    .attr("cy", yMap);
+			g.selectAll('.trendline')
+			    .transition()
+			    .attr("x1", function(d) { return xScale(d[0]); })
+			    .attr("y1", function(d) { return yScale(d[1]); })
+			    .attr("x2", function(d) { return xScale(d[2]); })
+			    .attr("y2", function(d) { return yScale(d[3]); });
 			g.select('clipPath').select('rect')
 			    .transition()
 			    .attr("width", width);
@@ -762,6 +803,12 @@ var GVPLOT = (function () {
             return my;
         };
 
+	my.trendLine = function(value) {
+            if (!arguments.length) return trendLine;
+            trendLine = value;
+            return my;
+        };
+
         return my;
 
     };
@@ -787,7 +834,46 @@ var GVPLOT = (function () {
 	    zoom.translate()[1];
 
 	return [tx,ty];
+    }
 
+    function trendLineFromData(data, xValue, yValue) {
+	var trend_line_data = data.slice()
+
+	trend_line_data.sort(function(x1, x2) {
+	    return d3.ascending(xValue(x1), xValue(x2))
+	});
+
+	var xSeries = trend_line_data.map(xValue),
+	    ySeries = trend_line_data.map(yValue);
+	var leastSquaresCoeff = leastSquares(xSeries, ySeries);
+
+	var x1 = xSeries[0],
+	    y1 = leastSquaresCoeff[0] + leastSquaresCoeff[1],
+	    x2 = xSeries[xSeries.length-1],
+	    y2 = leastSquaresCoeff[0] * xSeries.length + leastSquaresCoeff[1];
+	return [[x1,y1,x2,y2]];
+    }
+
+    function leastSquares(xSeries, ySeries) {
+	var reduceSumFunc = function(prev, cur) { return prev + cur; };
+
+	var xBar = xSeries.reduce(reduceSumFunc) * 1.0 / xSeries.length;
+	var yBar = ySeries.reduce(reduceSumFunc) * 1.0 / ySeries.length;
+
+	var ssXX = xSeries.map(function(d) { return Math.pow(d - xBar, 2); })
+	    .reduce(reduceSumFunc);
+
+	var ssYY = ySeries.map(function(d) { return Math.pow(d - yBar, 2); })
+	    .reduce(reduceSumFunc);
+
+	var ssXY = xSeries.map(function(d, i) { return (d - xBar) * (ySeries[i] - yBar); })
+	    .reduce(reduceSumFunc);
+
+	var slope = ssXY / ssXX;
+	var intercept = yBar - (xBar * slope);
+	var rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
+
+	return [slope, intercept, rSquare];
     }
     
 }());
