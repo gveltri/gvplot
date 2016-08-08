@@ -104,11 +104,13 @@ var bubbleplot = GVPLOT.scatterPlot()
     .xLabel('Arbitrary Number X')
     .yLabel('Arbitrary Number Y')
     .height(400)
+    .margin({top: 60, left: 30, bottom: 20, right: 10})
     .bubblePlot(true)
     .wValue(function(d) { return d.w; })
     .jValue(function(d) { return d.w; })
     .tooltipTitle(function(d) { return d.name; })
     .plotTitle('Generic Bubble Plot')
+    .xFormat(".0s")
     .trendLine(true);
 
 var bubbledata = function () {

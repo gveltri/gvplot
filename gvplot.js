@@ -88,7 +88,7 @@ var GVPLOT = (function () {
 
                 g.enter()
                     .append("g")
-                    .attr("transform", "translate(" + margin.left + "," + margin.right + ")");
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
                 svg
                     .attr("class", "gvplot-barplot")
@@ -271,7 +271,7 @@ var GVPLOT = (function () {
         var height = 300,
             width = 700,
             margin = {
-                top: 30,
+                top: 50,
                 right: 20,
                 bottom: 30,
                 left: 40
@@ -300,7 +300,9 @@ var GVPLOT = (function () {
             bubblePlot = false,
 	    zoomable = false,
 	    plotTitle = null,
-	    trendLine = false;
+	    trendLine = false,
+	    xFormat = null,
+	    yFormat = null;
 
         // main function
         function my(selection) {
@@ -344,7 +346,7 @@ var GVPLOT = (function () {
 
                     var zScale = d3.scale.linear().range([
                         min_bubble_size/max_value_size,
-	                      max_bubble_size/max_value_size
+	                max_bubble_size/max_value_size
                     ]),
                         zMap = function(d) { return 5 + zScale(zValue(d)) };
                 }
@@ -353,13 +355,15 @@ var GVPLOT = (function () {
                     .scale(xScale)
                     .orient("bottom")
                     .innerTickSize(-height)
-                    .outerTickSize(0);
+                    .outerTickSize(0)
+		    .tickFormat(d3.format(xFormat));
 
                 var yAxis = d3.svg.axis()
                     .scale(yScale)
                     .orient("left")
                     .innerTickSize(-width)
-                    .outerTickSize(0);
+                    .outerTickSize(0)
+		    .tickFormat(d3.format(yFormat));
 
 		
                 var svg = d3.select(this).selectAll("svg").data([data]);
@@ -379,7 +383,7 @@ var GVPLOT = (function () {
 
                 g.enter()
                     .append("g")
-                    .attr("transform", "translate(" + margin.left + "," + margin.right + ")");
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
                 svg
                     .attr("class", "gvplot-scatterplot")
@@ -447,8 +451,8 @@ var GVPLOT = (function () {
 		            .attr("x", (width / 2))
 		            .attr("y", -5)
 		            .attr("text-anchor", "middle")
-		            .style("font-size", "16px")
-		            .text(plotTitle);
+		            .style("font-size", "16px");
+		            
 		    }
 
 		    if (trendLine) {
@@ -526,6 +530,11 @@ var GVPLOT = (function () {
 			.attr("y1", function(d) { return yScale(d[1]); })
 			.attr("x2", function(d) { return xScale(d[2]); })
 			.attr("y2", function(d) { return yScale(d[3]); });
+		}
+
+		if (plotTitle != null) {
+		    plot_title
+			.text(plotTitle);
 		}
 
                 points.enter()
@@ -806,6 +815,18 @@ var GVPLOT = (function () {
 	my.trendLine = function(value) {
             if (!arguments.length) return trendLine;
             trendLine = value;
+            return my;
+        };
+
+	my.xFormat = function(value) {
+            if (!arguments.length) return xFormat;
+            xFormat = value;
+            return my;
+        };
+
+	my.yFormat = function(value) {
+            if (!arguments.length) return yFormat;
+            yFormat = value;
             return my;
         };
 
