@@ -336,7 +336,7 @@ var GVPLOT = (function () {
 
                 if (bubblePlot) {
                     data.sort(function(x1, x2) {
-                        return d3.descending(zValue(x1), zValue(x2))
+                        return d3.descending(zValue(x1), zValue(x2));
                     });
 
                     // make these variables accessible in future releases
@@ -885,6 +885,10 @@ var GVPLOT = (function () {
 		    d.x = parseDate(xValue(d));
 		});
 
+		data.sort(function(x1,x2) {
+		    return d3.ascending(x1.x, x2.x);
+		});
+
                 width = $(this).width() - margin.left - margin.right;
 
                 var xScale = d3.time.scale().range([0,width]),
@@ -1107,7 +1111,7 @@ var GVPLOT = (function () {
 		}
 
                 if (interactive) {
-		    var bisectDate = d3.bisector(xValue).left;
+		    var bisectDate = d3.bisector(function(d) { return d.x; }).left;
                     g.on("mousemove", function() {
 			g.selectAll(".focus-circle")
 			    .remove();
@@ -1119,7 +1123,7 @@ var GVPLOT = (function () {
 			    i = bisectDate(data, x0, 1),
 			    d0 = data[i - 1],
 			    d1 = data[i],
-			    d = x0 - xValue(d0) > xValue(d1) - x0 ? d1 : d0;
+			    d = x0 - d0.x > d1.x - x0 ? d1 : d0;
 
 			g.append("rect")
 			    .attr("x", xMap(d))
