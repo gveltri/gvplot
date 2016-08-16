@@ -1030,9 +1030,7 @@ var GVPLOT = (function () {
 		            
 		    }
 
-		    g.append("rect")
-			.attr("width", width)
-			.attr("height", height)
+		    var selection_rect = g.append("rect")
 			.attr("class", "space-selector");
 		    
                     g.append("g")
@@ -1091,6 +1089,11 @@ var GVPLOT = (function () {
                         .duration(1000)
                         .call(yAxis);
                 }
+
+		selection_rect
+		    .attr("width", width)
+		    .attr("height", height);
+			
 		
                 if (yValues != null) {
 		    for (_y in yValues) {
@@ -1215,6 +1218,9 @@ var GVPLOT = (function () {
 			g.select('g.x.axis').select('text.label')
 			    .transition()
 			    .attr("x", width);
+			selection_rect
+			    .attr("width", width)
+			    .attr("height", height);
 			if (yValues != null) {
 			    for (_y in yValues) {
 				g.selectAll('.line.' + _y)
