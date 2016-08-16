@@ -26,8 +26,12 @@
           <div id="scatter-plot">
           </div>
         </div>
-        <div class="col-md-12">
+	<div class="col-md-12">
           <div id="bubble-plot">
+          </div>
+        </div>
+	<div class="col-md-12">
+          <div id="line-plot">
           </div>
         </div>
       </div>
@@ -132,6 +136,36 @@ window.setInterval(function() {
         .call(bubbleplot);
 
 }, 10000);
+
+var lineplot = GVPLOT.linePlot()
+    .plotTitle('Generic Time Series Plot')
+    .yValues({
+	'y1': function(d) { return d.y1; },
+	'y2': function(d) { return d.y2; },
+	'y3': function(d) { return d.y3; },
+	'y4': function(d) { return d.y4; },
+    })
+    .height(400);
+
+var linedata = function() {
+    data = []
+    for (i=10;i<25;i++) {
+        data.push({'name': 'arbitrary name','x': '2016-01-' + i,'y1': Math.random() * 500,'y2': Math.random() * 500,'y3': Math.random() * 500,'y4': Math.random() * 500  });
+    }
+    return data
+}
+
+var lineSelection = d3.select('#line-plot')
+    .datum(linedata)
+    .call(lineplot);
+
+window.setInterval(function() {
+
+    // lineSelection
+    //     .datum(linedata)
+    //     .call(lineplot);
+
+}, 5000);
 
 
     </script>

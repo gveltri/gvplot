@@ -451,6 +451,7 @@ var GVPLOT = (function () {
 		            .attr("x", (width / 2))
 		            .attr("y", -5)
 		            .attr("text-anchor", "middle")
+			    .attr("class", "plot-title")
 		            .style("font-size", "16px");
 		            
 		    }
@@ -533,7 +534,7 @@ var GVPLOT = (function () {
 		}
 
 		if (plotTitle != null) {
-		    plot_title
+		    g.select("text.plot-title")
 			.text(plotTitle);
 		}
 
@@ -545,12 +546,6 @@ var GVPLOT = (function () {
                     .attr("r", 0)
 		    .attr("clip-path", "url(#bubble-plot-clip)");
 		
-                points.transition("transition-position")
-                    .duration(1000)
-                    .attr("cx", xMap)
-                    .attr("cy", yMap)
-                    .attr("r", 0);
-
                 if (bubblePlot) {
                     points
                         .attr("class", "bubble-point")
@@ -561,6 +556,8 @@ var GVPLOT = (function () {
                     points
                         .transition()
                         .duration(1000)
+			.attr("cx", xMap)
+			.attr("cy", yMap)
                         .attr("r", zMap);
                 }
                 else {
@@ -570,6 +567,8 @@ var GVPLOT = (function () {
                     points
                         .transition()
                         .duration(1000)
+			.attr("cx", xMap)
+			.attr("cy", yMap)
                         .attr("r", 4);
                 }
 
@@ -834,6 +833,508 @@ var GVPLOT = (function () {
 
     };
 
+    gvplot.linePlot = function () {
+        var height = 300,
+            width = 700,
+            margin = {
+                top: 50,
+                right: 20,
+                bottom: 30,
+                left: 40
+            },
+            xValue = function(d) { return d.x },
+            yValue = function(d) { return d.y },
+	    yValues = null,
+            plotPadding = 'auto',
+            interactive = true,
+            xLabel = 'x',
+            yLabel = 'y',
+	    yLabels = null,
+	    tooltipTitle = null,
+            tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip tooltip-lineplot")
+            .style("opacity", 0),
+	    customTooltip = null,
+            click = function(d) {
+            },
+            beforeCreation = function() {},
+            afterCreation = function() {},
+	    zoomable = false,
+	    plotTitle = null,
+	    xFormat = '%b-%d',
+	    yFormat = null,
+	    parseDate = d3.time.format("%Y-%m-%d").parse;
+
+        // main function
+        function my(selection) {
+
+            beforeCreation()
+
+            selection.each(function(data) {
+
+		data.forEach(function(d) {
+		    d.x = parseDate(xValue(d));
+		});
+
+                width = $(this).width() - margin.left - margin.right;
+
+                var xScale = d3.time.scale().range([0,width]),
+                    xMap = function(d) { return xScale(d.x); },
+                    yScale = d3.scale.linear().range([height, 0]),
+                    yMap = function(d) { return yScale(yValue(d)); },
+		    cMap = d3.scale.category10();
+
+                var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom")
+                    .innerTickSize(-height)
+                    .outerTickSize(0)
+		    .tickFormat(d3.time.format(xFormat));
+
+                var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left")
+                    .innerTickSize(-width)
+                    .outerTickSize(0)
+		    .tickFormat(d3.format(yFormat));
+
+		if (yValues != null) {
+		    var line = {}
+		    for (_y in yValues) {
+			line[_y] = d3.svg.line().x(xMap).y(function(d) { return yScale(yValues[_y](d)) });
+		    }
+		}
+		else {
+		    var line = d3.svg.line()
+			.x(xMap)
+			.y(yMap);
+		}
+
+		var init_line = d3.svg.line()
+		    .x(xMap)
+		    .y(height);
+
+                var svg = d3.select(this).selectAll("svg").data([data]);
+                svg.enter().append("svg");
+
+                if (svg.selectAll('g')[0].length == 0) {
+                    var initialData = true;
+                }
+                else {
+                    var initialData = false;
+		    if (interactive) {
+			d3.select("body").selectAll('.tooltip.tooltip-scatterplot')
+			    .style('opacity', 0);
+		    }
+                }
+                var g = svg.selectAll("g").data([data]);
+
+                g.enter()
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                svg
+                    .attr("class", "gvplot-scatterplot")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom);
+
+		if (yValues != null) {
+		    var yMax = d3.max(data, function(d) {
+			var _max = 0
+			for (yVal in yValues) {
+			    if (d[yVal] > _max ) {
+				_max = d[yVal];
+			    }
+			}
+			return _max;
+		    });
+		}
+		else {
+		    var yMax = d3.max(data, yValue);
+		}
+
+		var xMax = d3.max(data, xValue);
+
+		if (plotPadding=='auto') {
+		    var xplotPadding = xMax / 10,
+			yplotPadding = yMax / 9;
+		}
+		else {
+		    var xplotPadding = plotPadding,
+			yplotPadding = plotPadding;
+		}
+
+                yScale.domain([0, yMax + yplotPadding]);
+                xScale.domain(d3.extent(data, function(d) { return d.x; }));
+
+		var zoom = d3.behavior.zoom()
+		    .x(xScale)
+		    .y(yScale)
+		    .scaleExtent([1, 10])
+		    .on("zoom", zoom);
+		g.call(zoom);
+
+		function zoom() {
+		    zoom.translate(panLimit(
+			zoom,
+			{x: d3.extent(data, function(d) { return d.x; }), y: [0,yMax + yplotPadding]},
+			xScale,
+			yScale,
+			height,
+			width
+		    ));
+		    
+		    g.select(".x.axis").call(xAxis);
+		    g.select(".y.axis").call(yAxis);
+
+		    if (yValues != null) {
+			for (_y in yValues) {
+			    g.selectAll('.line.' + _y)
+				.attr("d", line[_y](data));
+			}
+		    }
+		    else {
+			g.selectAll('.line')
+			    .attr("d", line(data));
+		    }
+
+		}
+
+                if (initialData) {
+		    if (plotTitle != null) {
+			plot_title = g.append("text")
+		            .attr("x", (width / 2))
+		            .attr("y", -5)
+			    .attr("class", "plot-title")
+		            .attr("text-anchor", "middle")
+		            .style("font-size", "16px");
+		            
+		    }
+
+		    g.append("rect")
+			.attr("width", width)
+			.attr("height", height)
+			.attr("class", "space-selector");
+		    
+                    g.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(" + 0 + "," + height + ")")
+                        .call(xAxis)
+                        .append("text")
+                        .attr("class", "label")
+                        .attr("x", width)
+                        .attr("y", -6)
+                        .style("text-anchor", "end")
+                        .text(xLabel);
+
+                    g.append("g")
+                        .attr("class", "y axis")
+                        .call(yAxis)
+                        .append("text")
+                        .attr("class", "label")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 6)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text(yLabel);
+
+		    g.append("clipPath")
+			.attr("id", "line-plot-clip")
+			.append("rect")
+			.attr("width", width)
+			.attr("height", height);
+
+		    if (yValues != null) {
+			for (_y in yValues) {
+			    g.append("path")
+				.datum(data)
+				.attr("class", "line-plot line " + _y)
+				.attr("d", init_line)
+				.attr("stroke", cMap(_y))
+				.attr("clip-path", "url(#line-plot-clip)");
+			}
+		    }
+		    else {
+			g.append("path")
+			    .datum(data)
+			    .attr("class", "line-plot line")
+			    .attr("d", init_line)
+			    .attr("clip-path", "url(#line-plot-clip)");
+		    }
+                }
+                else {
+                    g.select('g.x.axis')
+                        .transition()
+                        .duration(1000)
+                        .call(xAxis);
+                    g.select('g.y.axis')
+                        .transition()
+                        .duration(1000)
+                        .call(yAxis);
+                }
+		
+                if (yValues != null) {
+		    for (_y in yValues) {
+			g.selectAll('.line.' + _y).transition('transition-position')
+			    .duration(1000)
+			    .attr("d", line[_y](data));
+		    }
+		}
+		else {
+		    g.selectAll('.line').transition('transition-position')
+			.duration(1000)
+			.attr("d", line(data));
+		}
+
+		if (plotTitle != null) {
+		    g.select("text.plot-title")
+			.text(plotTitle);
+		}
+
+                if (interactive) {
+		    var bisectDate = d3.bisector(xValue).left;
+                    svg.on("mousemove", function() {
+			g.selectAll(".focus-circle")
+			    .remove();
+			g.selectAll(".vertical-bar")
+			    .remove();
+
+			var x = d3.mouse(this)[0],
+			    x0 = xScale.invert(x),
+			    i = bisectDate(data, x0, 1),
+			    d = data[i-1];
+
+			g.append("rect")
+			    .attr("x", xMap(d))
+			    .attr("y", 0)
+			    .attr("height", height)
+			    .attr("class", "vertical-bar")
+			    .attr("fill", "#555")
+			    .attr("width", 1);
+			
+			for (_y in yValues) {
+			    g.append("circle")
+				.attr("r", 5)
+				.attr("cx", xMap(d))
+				.attr("cy", function(d) { return yScale(yValues[_y](d)); }(d))
+				.attr("fill", "none")
+				.attr("stroke", cMap(_y))
+				.attr("stroke-width", 1)
+				.attr("class", "focus-circle");
+			}
+
+			tooltip.transition()
+		            .duration(100)
+		            .style("opacity", 1);
+			tooltip.html(customTooltip != null ? customTooltip(d) : tooltipConstructor(d))
+		            .style("left", (d3.event.pageX + 5) + "px")
+		            .style("top", (d3.event.pageY - 28) + "px");
+			d3.select(this).transition()
+		            .duration(50)
+		            .style("opacity", 1);
+		    })
+			.on("mouseout", function() {
+			    g.selectAll(".focus-circle")
+				.remove();
+			    g.selectAll(".vertical-bar")
+				.remove();
+			    tooltip.transition()
+				.duration(500)
+				.style("opacity", 0);
+			    
+			})
+			.on("click", click);
+
+		    function tooltipConstructor(d) {
+			if (yValues != null)  {
+			    var tooltip_text = "placeholder"
+			}
+			else {
+			    var tooltip_text = xLabel + ": " + xValue(d) + "<br>" + yLabel + ": " + yValue(d).toFixed(2);
+			}
+			return tooltip_text
+		    }
+                }
+
+		if (initialData) {
+		    var container = d3.select(this)[0];
+		    window.addEventListener('resize', function() {
+			width = $(container).width() - margin.left - margin.right,
+			xScale = d3.time.scale().range([0,width]),
+			yScale = d3.scale.linear().range([height, 0]),
+			xScale.domain(d3.extent(data, function(d) { return d.x; })),
+			yScale.domain([0, yMax + yplotPadding]);
+			svg
+			    .transition()
+			    .attr("width", width + margin.left + margin.right)
+			    .attr("height", height + margin.top + margin.bottom);
+			plot_title.transition()
+			    .attr("x", (width / 2))
+		            .attr("y", -5)
+			g.select('g.y.axis')
+			    .transition()
+			    .call(yAxis.scale(yScale).innerTickSize(-width));
+			g.select('g.x.axis')
+			    .transition()
+			    .call(xAxis.scale(xScale));
+			g.select('g.x.axis').select('text.label')
+			    .transition()
+			    .attr("x", width);
+			if (yValues != null) {
+			    for (_y in yValues) {
+				g.selectAll('.line.' + _y)
+				    .transition()
+				    .attr("d", line[_y](data));
+			    }
+			}
+			else {
+			    g.selectAll('.line')
+				.transition()
+				.attr("d", line(data));
+			}
+			g.select('clipPath').select('rect')
+			    .transition()
+			    .attr("width", width);
+		    });
+		}
+		
+            }
+			   
+			   
+                          );
+	    
+
+            afterCreation();
+
+	    
+        }
+
+        // accessors
+        my.height = function(value) {
+            if (!arguments.length) return height;
+            height = value;
+            return my;
+        };
+
+        my.width = function(value) {
+            if (!arguments.length) return width;
+            width = value;
+            return my;
+        };
+
+        my.margin = function(value) {
+            if (!arguments.length) return margin;
+            margin = value;
+            return my;
+        };
+
+        my.xValue = function(value) {
+            if (!arguments.length) return xValue;
+            xValue = value;
+            return my;
+        };
+	
+        my.yValue = function(value) {
+            if (!arguments.length) return yValue;
+            yValue = value;
+            return my;
+        };
+
+	my.yValues = function(value) {
+            if (!arguments.length) return yValues;
+            yValues = value;
+            return my;
+        };
+
+        my.plotPadding = function(value) {
+            if (!arguments.length) return plotPadding;
+            plotPadding = value;
+            return my;
+        };
+
+        my.interactive = function(value) {
+            if (!arguments.length) return interactive;
+            interactive = value;
+            return my;
+        };
+
+        my.xLabel = function(value) {
+            if (!arguments.length) return xLabel;
+            xLabel = value;
+            return my;
+        };
+
+        my.yLabel = function(value) {
+            if (!arguments.length) return yLabel;
+            yLabel = value;
+            return my;
+        };
+
+        my.click = function(value) {
+            if (!arguments.length) return click;
+            click = value;
+            return my;
+        };
+
+	my.customTooltip = function(value) {
+            if (!arguments.length) return customTooltip;
+            customTooltip = value;
+            return my;
+        };
+
+        my.beforeCreation = function(value) {
+            if (!arguments.length) return beforeCreation;
+            beforeCreation = value;
+            return my;
+        };
+
+        my.afterCreation = function(value) {
+            if (!arguments.length) return afterCreation;
+            afterCreation = value;
+            return my;
+        };
+
+        my.bubblePlot = function(value) {
+            if (!arguments.length) return bubblePlot;
+            bubblePlot = value;
+            return my;
+        };
+
+	my.tooltipTitle = function(value) {
+            if (!arguments.length) return tooltipTitle;
+            tooltipTitle = value;
+            return my;
+        };
+
+	my.zoomable = function(value) {
+            if (!arguments.length) return zoomable;
+            zoomable = value;
+            return my;
+        };
+
+	my.plotTitle = function(value) {
+            if (!arguments.length) return plotTitle;
+            plotTitle = value;
+            return my;
+        };
+
+	my.xFormat = function(value) {
+            if (!arguments.length) return xFormat;
+            xFormat = value;
+            return my;
+        };
+
+	my.yFormat = function(value) {
+            if (!arguments.length) return yFormat;
+            yFormat = value;
+            return my;
+        };
+
+        return my;
+
+    };
+
+
     return gvplot;
 
     function panLimit(zoom, panExtent, x, y, height, width) {
@@ -898,4 +1399,3 @@ var GVPLOT = (function () {
     }
     
 }());
-
