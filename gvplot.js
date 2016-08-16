@@ -1090,7 +1090,7 @@ var GVPLOT = (function () {
                         .call(yAxis);
                 }
 
-		selection_rect
+		g.select('rect.space-selector')
 		    .attr("width", width)
 		    .attr("height", height);
 			
@@ -1116,6 +1116,7 @@ var GVPLOT = (function () {
                 if (interactive) {
 		    var bisectDate = d3.bisector(function(d) { return d.x; }).left;
                     g.on("mousemove", function() {
+			data = g.data()[0];
 			g.selectAll(".focus-circle")
 			    .remove();
 			g.selectAll(".vertical-bar")
