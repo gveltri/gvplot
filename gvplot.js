@@ -983,7 +983,14 @@ var GVPLOT = (function () {
 			height,
 			width
 		    ));
-		    
+
+		    g.selectAll(".focus-circle")
+			.remove();
+		    g.selectAll(".vertical-bar")
+			.remove();
+		    tooltip
+			.style("opacity", 0);
+
 		    g.select(".x.axis").call(xAxis);
 		    g.select(".y.axis").call(yAxis);
 
@@ -1092,8 +1099,8 @@ var GVPLOT = (function () {
 		}
 
                 if (interactive) {
-		    var bisectDate = d3.bisector(xValue).left;
-                    svg.on("mousemove", function() {
+		    var bisectDate = d3.bisector(xValue).right;
+                    g.on("mousemove", function() {
 			g.selectAll(".focus-circle")
 			    .remove();
 			g.selectAll(".vertical-bar")
@@ -1126,12 +1133,17 @@ var GVPLOT = (function () {
 			tooltip.transition()
 		            .duration(100)
 		            .style("opacity", 1);
-			tooltip.html(customTooltip != null ? customTooltip(d) : tooltipConstructor(d))
-		            .style("left", (d3.event.pageX + 50) + "px")
-		            .style("top", (d3.event.pageY - 28) + "px");
-			d3.select(this).transition()
-		            .duration(50)
-		            .style("opacity", 1);
+			tooltip.html(customTooltip != null ? customTooltip(d) : tooltipConstructor(d));
+			if (i > data.length - 3) {
+			    tooltip
+				.style("left", (d3.event.pageX - 200) + "px")
+				.style("top", (d3.event.pageY - 28) + "px");
+			}
+			else {
+			    tooltip
+				.style("left", (d3.event.pageX + 50) + "px")
+				.style("top", (d3.event.pageY - 28) + "px");
+			}
 		    })
 			.on("mouseout", function() {
 			    g.selectAll(".focus-circle")
@@ -1147,9 +1159,9 @@ var GVPLOT = (function () {
 
 		    function tooltipConstructor(d) {
 			if (yValues != null)  {
-			    var tooltip_text = "Date: " + xValue(d) + "<br>"
+			    var tooltip_text = "Date: " + d3.time.format('%b %d, %Y')(xValue(d)) + "<br>"
 			    for (_y in yValues) {
-				tooltip_text = tooltip_text + _y + ": " + yValues[_y](d).toFixed(2) + "<br>"
+				tooltip_text = tooltip_text + "<span style='color:" + cMap(_y) +"';>" + _y + "</span>: " + yValues[_y](d).toFixed(2) + "<br>"
 			    }
 			}
 			else {
