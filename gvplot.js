@@ -1127,7 +1127,7 @@ var GVPLOT = (function () {
 		            .duration(100)
 		            .style("opacity", 1);
 			tooltip.html(customTooltip != null ? customTooltip(d) : tooltipConstructor(d))
-		            .style("left", (d3.event.pageX + 5) + "px")
+		            .style("left", (d3.event.pageX + 50) + "px")
 		            .style("top", (d3.event.pageY - 28) + "px");
 			d3.select(this).transition()
 		            .duration(50)
@@ -1147,7 +1147,10 @@ var GVPLOT = (function () {
 
 		    function tooltipConstructor(d) {
 			if (yValues != null)  {
-			    var tooltip_text = "placeholder"
+			    var tooltip_text = "Date: " + xValue(d) + "<br>"
+			    for (_y in yValues) {
+				tooltip_text = tooltip_text + _y + ": " + yValues[_y](d).toFixed(2) + "<br>"
+			    }
 			}
 			else {
 			    var tooltip_text = xLabel + ": " + xValue(d) + "<br>" + yLabel + ": " + yValue(d).toFixed(2);
