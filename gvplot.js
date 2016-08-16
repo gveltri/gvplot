@@ -1128,7 +1128,8 @@ var GVPLOT = (function () {
 			    .attr("class", "vertical-bar")
 			    .attr("pointer-events", "none")
 			    .attr("fill", "#555")
-			    .attr("width", 1);
+			    .attr("width", 1)
+			    .attr("clip-path", "url(#line-plot-clip)");
 			
 			for (_y in yValues) {
 			    g.append("circle")
@@ -1139,7 +1140,8 @@ var GVPLOT = (function () {
 				.attr("stroke", cMap(_y))
 				.attr("stroke-width", 1)
 				.attr("class", "focus-circle")
-				.attr("pointer-events", "none");
+				.attr("pointer-events", "none")
+				.attr("clip-path", "url(#line-plot-clip)");
 			}
 
 			tooltip.transition()
