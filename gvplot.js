@@ -587,9 +587,18 @@ var GVPLOT = (function () {
 			    tooltip.transition()
 				.duration(100)
 				.style("opacity", 1);
-			    tooltip.html(tooltip_text)
-				.style("left", (d3.event.pageX + 5) + "px")
-				.style("top", (d3.event.pageY - 28) + "px");
+			    tooltip.html(tooltip_text);
+			    var text_length = tooltip[0][0].clientWidth;
+			    if (width < (d3.event.pageX + text_length)) {
+				tooltip
+				    .style("left", (d3.event.pageX - text_length - 50) + "px")
+				    .style("top", (d3.event.pageY - 28) + "px");
+			    }
+			    else {
+				tooltip
+				    .style("left", (d3.event.pageX + 25) + "px")
+				    .style("top", (d3.event.pageY - 28) + "px");
+			    }
 			})
                         .on("mouseout", function(d) {
 			    tooltip.transition()
@@ -969,7 +978,6 @@ var GVPLOT = (function () {
 
 		var zoom = d3.behavior.zoom()
 		    .x(xScale)
-		    .y(yScale)
 		    .scaleExtent([1, 10])
 		    .on("zoom", zoom);
 		g.call(zoom);
@@ -1099,7 +1107,7 @@ var GVPLOT = (function () {
 		}
 
                 if (interactive) {
-		    var bisectDate = d3.bisector(xValue).right;
+		    var bisectDate = d3.bisector(xValue).left;
                     g.on("mousemove", function() {
 			g.selectAll(".focus-circle")
 			    .remove();
@@ -1109,13 +1117,16 @@ var GVPLOT = (function () {
 			var x = d3.mouse(this)[0],
 			    x0 = xScale.invert(x),
 			    i = bisectDate(data, x0, 1),
-			    d = data[i-1];
+			    d0 = data[i - 1],
+			    d1 = data[i],
+			    d = x0 - xValue(d0) > xValue(d1) - x0 ? d1 : d0;
 
 			g.append("rect")
 			    .attr("x", xMap(d))
 			    .attr("y", 0)
 			    .attr("height", height)
 			    .attr("class", "vertical-bar")
+			    .attr("pointer-events", "none")
 			    .attr("fill", "#555")
 			    .attr("width", 1);
 			
@@ -1127,16 +1138,19 @@ var GVPLOT = (function () {
 				.attr("fill", "none")
 				.attr("stroke", cMap(_y))
 				.attr("stroke-width", 1)
-				.attr("class", "focus-circle");
+				.attr("class", "focus-circle")
+				.attr("pointer-events", "none");
 			}
 
 			tooltip.transition()
 		            .duration(100)
 		            .style("opacity", 1);
 			tooltip.html(customTooltip != null ? customTooltip(d) : tooltipConstructor(d));
-			if (i > data.length - 3) {
+
+			var text_length = tooltip[0][0].clientWidth;
+			if (width < (d3.event.pageX + 50 + text_length)) {
 			    tooltip
-				.style("left", (d3.event.pageX - 200) + "px")
+				.style("left", (d3.event.pageX - text_length - 50) + "px")
 				.style("top", (d3.event.pageY - 28) + "px");
 			}
 			else {
