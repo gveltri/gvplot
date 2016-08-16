@@ -1175,7 +1175,7 @@ var GVPLOT = (function () {
 
 		    function tooltipConstructor(d) {
 			if (yValues != null)  {
-			    var tooltip_text = "Date: " + d3.time.format('%b %d, %Y')(xValue(d)) + "<br>"
+			    var tooltip_text = "Date: " + d3.time.format('%b %d, %Y')(d.x) + "<br>"
 			    for (_y in yValues) {
 				tooltip_text = tooltip_text + "<span style='color:" + cMap(_y) +"';>" + _y + "</span>: " + yValues[_y](d).toFixed(2) + "<br>"
 			    }
@@ -1358,6 +1358,12 @@ var GVPLOT = (function () {
 	my.yFormat = function(value) {
             if (!arguments.length) return yFormat;
             yFormat = value;
+            return my;
+        };
+
+	my.parseDate = function(value) {
+            if (!arguments.length) return parseDate;
+            parseDate = value;
             return my;
         };
 
