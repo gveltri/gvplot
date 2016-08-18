@@ -16,20 +16,28 @@
       <div class="page-header">
         <h1>gvplot.js</h1>
       </div>
-
       <div class="row">
         <div class="col-md-12">
           <div id="bar-plot">
           </div>
-        </div>
+	</div>
+      </div>
+      <br>
+      <div class="row">
         <div class="col-md-12">
           <div id="scatter-plot">
           </div>
         </div>
+      </div>
+      <br>
+      <div class="row">
 	<div class="col-md-12">
           <div id="bubble-plot">
           </div>
         </div>
+      </div>
+      <br>
+      <div class="row">
 	<div class="col-md-12">
           <div id="line-plot">
           </div>
@@ -138,6 +146,8 @@ window.setInterval(function() {
 }, 10000);
 
 var lineplot = GVPLOT.linePlot()
+    .interpolation('cardinal')
+    .theme('dark-theme')
     .plotTitle('Generic Time Series Plot')
     .yValues({
 	'y1': function(d) { return d.y1; },
@@ -161,9 +171,9 @@ var lineSelection = d3.select('#line-plot')
 
 window.setInterval(function() {
 
-    // lineSelection
-    //     .datum(linedata)
-    //     .call(lineplot);
+    lineSelection
+        .datum(linedata)
+        .call(lineplot);
 
 }, 5000);
 

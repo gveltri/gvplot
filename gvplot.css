@@ -1,7 +1,32 @@
-.axis path,
-.axis line {
+svg.dark-theme {
+    background-color: #333;
+    font: 11px sans-serif;
+}
+
+.dark-theme .axis text {
+    fill: #ddd;
+    font-weight: 100;
+}
+
+text.plot-title {
+    letter-spacing: 1px;
+}
+
+.dark-theme text.plot-title {
+    fill: #eee;
+}
+
+.default-theme .axis path,
+.default-theme .axis line {
     fill: none;
     stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.dark-theme .axis path,
+.dark-theme .axis line {
+    fill: none;
+    stroke: #ddd;
     shape-rendering: crispEdges;
 }
 
@@ -22,33 +47,47 @@
     border: #eef 2px solid;
 }
 
-/* barplot styles */
-svg.gvplot-barplot {
-    font: 11px sans-serif;
-    color: #999;
+.dark-theme.tooltip {
+    position: absolute;
+    pointer-events: none;
+    background-color: rgba(20,20,20, 0.8);
+    padding: 10px;
+    border: #ddd 2px solid;
+    color: #fff;
+    font-weight: 100;
+    letter-spacing: 1;
 }
 
 svg.gvplot-barplot .bar {
     fill: steelblue;
 }
 
-
-.svg-container {
-    display: inline-block;
-    position: relative;
-    width: 100%;
-    padding-bottom: 100%; /* aspect ratio */
-    vertical-align: top;
-    overflow: hidden;
-}
-.svg-content-responsive {
-    display: inline-block;
-    position: absolute;
-    top: 10px;
-    left: 0;
-}
-
-rect.space-selector {
+.default-theme rect.space-selector {
     fill: transparent;
     shape-rendering: crispEdges;
+    stroke: #;
+    opacity: 0.2;
+    stroke-width: 1px;
+}
+
+.dark-theme rect.space-selector {
+    fill: transparent;
+    shape-rendering: crispEdges;
+    stroke: #000;
+    opacity: 0.2;
+    stroke-width: 1px;
+}
+
+.dark-theme rect.vertical-bar {
+    fill: #fff
+}
+
+.default-theme rect.vertical-bar {
+    fill: #fff
+}
+
+/* barplot styles */
+svg.gvplot-barplot {
+    font: 11px sans-serif;
+    color: #999;
 }

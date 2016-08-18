@@ -10,7 +10,7 @@ var GVPLOT = (function () {
         var height = 300,
             width = 700,
             margin = {
-                top: 20,
+                top: 50,
                 right: 20,
                 bottom: 30,
                 left: 40
@@ -48,12 +48,15 @@ var GVPLOT = (function () {
             click = function(d) {
             },
             beforeCreation = function() {},
-            afterCreation = function() {};
+            afterCreation = function() {},
+	    theme = 'default-theme';
 
         // main function
         function my(selection) {
 
             beforeCreation()
+
+	    tooltip.attr("class", 'tooltip tooltip-lineplot ' + theme);
 
             selection.each(function(data) {
 
@@ -67,13 +70,13 @@ var GVPLOT = (function () {
                 var xAxis = d3.svg.axis()
                     .scale(xScale)
                     .orient("bottom")
-                    .outerTickSize(0);
+                    .outerTickSize(2);
 
                 var yAxis = d3.svg.axis()
                     .scale(yScale)
                     .orient("left")
                     .innerTickSize(-width)
-                    .outerTickSize(0);
+                    .outerTickSize(2);
 
                 var svg = d3.select(this).selectAll("svg").data([data]);
                 svg.enter().append("svg");
@@ -91,7 +94,7 @@ var GVPLOT = (function () {
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
                 svg
-                    .attr("class", "gvplot-barplot")
+                    .attr("class", "gvplot-barplot " + theme)
                     .attr("width", width + margin.left + margin.right)
                     .attr("height", height + margin.top + margin.bottom)
 
@@ -263,6 +266,12 @@ var GVPLOT = (function () {
             return my;
         };
 
+	my.theme = function(value) {
+            if (!arguments.length) return theme;
+            theme = value;
+            return my;
+        };
+
         return my;
 
     };
@@ -302,12 +311,15 @@ var GVPLOT = (function () {
 	    plotTitle = null,
 	    trendLine = false,
 	    xFormat = null,
-	    yFormat = null;
+	    yFormat = null,
+	    theme = 'default-theme';
 
         // main function
         function my(selection) {
 
             beforeCreation()
+
+	    tooltip.attr("class", 'tooltip tooltip-lineplot ' + theme);
 
             selection.each(function(data) {
 
@@ -355,16 +367,15 @@ var GVPLOT = (function () {
                     .scale(xScale)
                     .orient("bottom")
                     .innerTickSize(-height)
-                    .outerTickSize(0)
+                    .outerTickSize(2)
 		    .tickFormat(d3.format(xFormat));
 
                 var yAxis = d3.svg.axis()
                     .scale(yScale)
                     .orient("left")
                     .innerTickSize(-width)
-                    .outerTickSize(0)
+                    .outerTickSize(2)
 		    .tickFormat(d3.format(yFormat));
-
 		
                 var svg = d3.select(this).selectAll("svg").data([data]);
                 svg.enter().append("svg");
@@ -386,7 +397,7 @@ var GVPLOT = (function () {
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
                 svg
-                    .attr("class", "gvplot-scatterplot")
+                    .attr("class", "gvplot-scatterplot " + theme)
                     .attr("width", width + margin.left + margin.right)
                     .attr("height", height + margin.top + margin.bottom);
 
@@ -449,7 +460,7 @@ var GVPLOT = (function () {
 		    if (plotTitle != null) {
 			plot_title = g.append("text")
 		            .attr("x", (width / 2))
-		            .attr("y", -5)
+		            .attr("y", -20)
 		            .attr("text-anchor", "middle")
 			    .attr("class", "plot-title")
 		            .style("font-size", "16px");
@@ -838,6 +849,12 @@ var GVPLOT = (function () {
             return my;
         };
 
+	my.theme = function(value) {
+            if (!arguments.length) return theme;
+            theme = value;
+            return my;
+        };
+
         return my;
 
     };
@@ -872,12 +889,16 @@ var GVPLOT = (function () {
 	    plotTitle = null,
 	    xFormat = '%b-%d',
 	    yFormat = null,
-	    parseDate = d3.time.format("%Y-%m-%d").parse;
+	    parseDate = d3.time.format("%Y-%m-%d").parse,
+	    interpolation = 'linear',
+	    theme = 'default-theme';
 
         // main function
         function my(selection) {
 
             beforeCreation()
+
+	    tooltip.attr("class", 'tooltip tooltip-lineplot ' + theme);
 
             selection.each(function(data) {
 
@@ -914,11 +935,12 @@ var GVPLOT = (function () {
 		if (yValues != null) {
 		    var line = {}
 		    for (_y in yValues) {
-			line[_y] = d3.svg.line().x(xMap).y(function(d) { return yScale(yValues[_y](d)) });
+			line[_y] = d3.svg.line().interpolate(interpolation).x(xMap).y(function(d) { return yScale(yValues[_y](d)) });
 		    }
 		}
 		else {
 		    var line = d3.svg.line()
+			.interpolate(interpolation)
 			.x(xMap)
 			.y(yMap);
 		}
@@ -947,7 +969,7 @@ var GVPLOT = (function () {
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
                 svg
-                    .attr("class", "gvplot-scatterplot")
+                    .attr("class", "gvplot-scatterplot " + theme)
                     .attr("width", width + margin.left + margin.right)
                     .attr("height", height + margin.top + margin.bottom);
 
@@ -1023,7 +1045,7 @@ var GVPLOT = (function () {
 		    if (plotTitle != null) {
 			plot_title = g.append("text")
 		            .attr("x", (width / 2))
-		            .attr("y", -5)
+		            .attr("y", -20)
 			    .attr("class", "plot-title")
 		            .attr("text-anchor", "middle")
 		            .style("font-size", "16px");
@@ -1135,7 +1157,6 @@ var GVPLOT = (function () {
 			    .attr("height", height)
 			    .attr("class", "vertical-bar")
 			    .attr("pointer-events", "none")
-			    .attr("fill", "#555")
 			    .attr("width", 1)
 			    .attr("clip-path", "url(#line-plot-clip)");
 			
@@ -1375,6 +1396,18 @@ var GVPLOT = (function () {
 	my.parseDate = function(value) {
             if (!arguments.length) return parseDate;
             parseDate = value;
+            return my;
+        };
+
+	my.interpolation = function(value) {
+            if (!arguments.length) return interpolation;
+            interpolation = value;
+            return my;
+        };
+
+	my.theme = function(value) {
+            if (!arguments.length) return theme;
+            theme = value;
             return my;
         };
 

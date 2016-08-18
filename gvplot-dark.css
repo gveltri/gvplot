@@ -1,0 +1,60 @@
+svg {
+    background-color: #333;
+    font: 11px sans-serif;
+}
+
+.axis text {
+    fill: #ddd;
+    font-weight: 100;
+}
+
+text.plot-title {
+    fill: #eee;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #ddd;
+    shape-rendering: crispEdges;
+}
+
+.line {
+    fill: none;
+    stroke-width: 1.5px;
+}
+
+.tick line {
+    opacity: 0.2;
+}
+
+.tooltip {
+    position: absolute;
+    pointer-events: none;
+    background-color: rgba(20,20,20, 0.8);
+    padding: 10px;
+    border: #ddd 2px solid;
+    color: #fff;
+    font-weight: 100;
+    letter-spacing: 1;
+}
+
+rect.space-selector {
+    fill: transparent;
+    shape-rendering: crispEdges;
+    stroke: #ddd;
+    opacity: 0.2;
+    stroke-width: 1px;
+}
+
+/* barplot styles */
+
+svg.gvplot-barplot .bar {
+    fill: steelblue;
+}
+
+/* Line plot styles */
+
+rect.vertical-bar {
+    fill: #fff
+}
